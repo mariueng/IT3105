@@ -1,1 +1,1 @@
-# project1
+# Project 1: Peg-Solitaire solver using Actor-Critic algorithm
