@@ -2,14 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1ee42dcb-8af9-480a-9751-000b605545a9" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../Project1/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Project1/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Project1/.idea/Project1.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../Project1/.idea/Project1.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Project1/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Project1/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Project1/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Project1/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Project3/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Project3/main.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Project3/mcts.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Project3/node.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Project3/state_manager.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,9 +35,14 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../Project1" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../Project3" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\mariu\PycharmProjects\IT3105\Project3" />
+    </key>
   </component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -84,6 +86,7 @@
       <workItem from="1583264465970" duration="72823000" />
       <workItem from="1584110813250" duration="12977000" />
       <workItem from="1584141566981" duration="856000" />
+      <workItem from="1584143662563" duration="52000" />
     </task>
     <servers />
   </component>
