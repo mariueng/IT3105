@@ -1,10 +1,8 @@
-from state_manager import NIM
-from state_manager import Ledge
-from node import Node
-from mcts import MCTS
+from Project2.state_manager import NIM, Ledge
+from Project2.node import Node
+from Project2.mcts import MCTS
 import random
 import time
-
 
 
 def set_first_player(player):
