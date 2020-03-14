@@ -1,4 +1,3 @@
-import math
 import tensorflow as tf
 import numpy as np
 from tensorflow.keras.models import Sequential
@@ -11,7 +10,6 @@ class NNCritic:
         self.decay_rate_critic = decay_rate_critic
         self.discount_factor = discount_factor
         self.eligibilities = []
-        # Build model
         self.model = Sequential()
         self.model.add(Dense(input_dim, activation='relu', input_dim=input_dim))
         for hidden_layer in hidden_layers:

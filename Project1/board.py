@@ -1,5 +1,5 @@
 import numpy as np
-from cell import Cell
+from Project1.cell import Cell
 
 
 class Board:

@@ -1,8 +1,8 @@
-from visualize import Visualize
-from simWorldPeg import SimWorld
-from actor import Actor
-from table_critic import TableCritic
-from nn_critic import NNCritic
+from Project1.visualize import Visualize
+from Project1.sim_world import SimWorld
+from Project1.actor import Actor
+from Project1.table_critic import TableCritic
+from Project1.nn_critic import NNCritic
 import time
 import matplotlib.pyplot as plt
 

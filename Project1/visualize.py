@@ -1,6 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from board import Board
+from Project1.board import Board
 
 
 class Visualize:
