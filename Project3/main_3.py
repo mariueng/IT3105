@@ -1,82 +1,226 @@
-from Project2.state_manager import NIM, Ledge
-from Project2.node import Node
-from Project2.mcts import MCTS
-import random
+from state_manager import Hex
+from node import Node
+from mcts import MCTS
+from ANET import ANET
 import time
+import numpy as np
+import random
+import math
+import matplotlib.pyplot as plt
 
 
+# Global variables to check losses and accuracies of model
+all_cases = []
 
-def set_first_player(player):
-    assert player == 1 or player == 2 or player == 3, "Please provide a valid first player option (1, 2 or 3)"
-    if player == 3:
-        return random.choice([1, 2])
-    return player
-
-
-def perform_action(no_of_simulations, game_state):
-    mcts = MCTS(game_state)
-    return mcts.perform_mcts(no_of_simulations)
+test_losses = []
+test_accuracies = []
+train_losses = []
+train_accuracies = []
 
 
-def run(G, M, N, K, B, P, game_type, _verbose):
+def train_anet(net, buffer, minibatch_size_):
+    """
+    Trains Neural Net (nn)
+    :param net: Neural network to be trained
+    :param buffer: Replay buffer storing training cases
+    :param minibatch_size_: Size of minibatch to train nn on
+    :return:
+    """
+    minibatch_size_ = math.ceil(len(all_cases) / 2)
+    training_cases = random.sample(all_cases, minibatch_size_)
+    x_train, y_train = list(zip(*training_cases))
+    x_test, y_test = list(zip(*all_cases))
+    train_loss, train_acc = net.fit(x_train, y_train)
+    test_loss, test_acc = net.get_status(x_test, y_test)
+    test_losses.append(test_loss)
+    test_accuracies.append(test_acc)
+    train_losses.append(train_loss)
+    train_accuracies.append(train_acc)
+
+
+def write(filename, cases):
+    inputs, targets = list(zip(*cases))
+    input_txt = filename + '_inputs.txt'
+    target_txt = filename + '_targets.txt'
+    np.savetxt(input_txt, inputs)
+    np.savetxt(target_txt, targets)
+    print(f'Buffer have been written to \n{input_txt}\n{target_txt}')
+
+
+def load(filename):
+    inputs = np.loadtxt(filename + '_inputs.txt')
+    targets = np.loadtxt(filename + '_targets.txt')
+    cases = list(zip(inputs, targets))
+    return cases
+
+
+def plot(episode, save=False):
+    episodes_ = np.arange(episode)
+    fig = plt.figure(figsize=(12, 5))
+    title = f'Size: {k}   M: {m}   lr: {learning_rate}   Epochs: {epochs}   '
+    title += f'Batch size: {minibatch_size}   All cases: {len(all_cases)}'
+    fig.suptitle(title, fontsize=10)
+    gs = fig.add_gridspec(1, 2)
+    ax = fig.add_subplot(gs[0, 0])
+    ax.set_title("Accuracy")
+    ax.plot(episodes_, train_accuracies, color='tab:green', label="Batch")
+    ax.plot(episodes_, test_accuracies, color='tab:blue', label="All cases")
+    plt.legend()
+    ax = fig.add_subplot(gs[0, 1])
+    ax.set_title("Loss")
+    ax.plot(episodes_, train_losses, color='tab:red', label="Batch")
+    ax.plot(episodes_, test_losses, color='tab:orange', label="All cases")
+    plt.legend()
+    if save:
+        plt.savefig(f"plots/size-{k}")
+        plt.close()
+    else:
+        if episode == episodes:
+            plt.show()
+        else:
+            plt.show(block=False)
+            plt.pause(0.1)
+            plt.close()
+
+
+def plot_level_accuracies(levels, anet):
+    cases = load(f"cases/size_{k}")
+    losses = []
+    accuracies = []
+    for l in levels:
+        anet.load(k, l)
+        input_, target = list(zip(*cases))
+        losses.append(anet.get_loss(input_, target))
+        accuracies.append(anet.accuracy(input_, target))
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    plt.xlabel("episodes")
+    fig.axes[0].set_title(f"Size {k}")
+    ax.plot(levels, accuracies, color='tab:blue', label="Accuracy")
+    ax.plot(levels, losses, color='tab:orange', label="Loss")
+    plt.legend()
+    plt.show()
+
+
+def add_case(b_a, D):
+    state = b_a.repr_state
+    size = b_a.size
+    all_cases.append((state, D))
+    if random.random() > 0.5:
+        player = state[0]
+        state = state[1:].reshape(size, size)
+        rot_state = np.rot90(state, k=2, axes=(0, 1))
+        probs = D.reshape(size, size)
+        rot_D = np.rot90(probs, k=2, axes=(0, 1))
+        all_cases.append((np.asarray([player] + list(rot_state.reshape(size ** 2))), rot_D.reshape(size ** 2)))
+
+
+def win_rate(p1, p2):
+    game = Hex(k)
+    wins = np.zeros(100)
+    for i in range(100):
+        p1_starts = bool(i % 2)
+        game.reset()
+        move = p1.get_greedy(game) if p1_starts else p2.get_greedy(game)
+        game.move(move)
+        turn = not p1_starts
+        while not game.is_game_over():
+            move = p1.get_greedy(game) if turn else p2.get_greedy(game)
+            game.move(move)
+            turn = not turn
+        if (p1_starts and game.result() == 1) or (not p1_starts and game.result() == -1):
+            wins[i] = 1
+    return sum(wins)/100
+
+
+def run(episodes_, simulations_, k_, first_player_, learning_rate_, hidden_layers_, activation_function_, optimizer_,
+        epochs_, m_, rr_games_, minibatch_size_, verbose_, live_plot=False):
+    # Save interval and training cases stored in these lists
+    i_s = episodes_ / m_
+    RBUF = []
+
+    # Epsilon decay options
+    if episodes_ >= 200:
+        eps_decay = 0.05 ** (1./episodes_)
+    else:
+        eps_decay = 0.99
+
+    # Initialize ANET
+    anet = ANET(k_ * k_, hidden_layers_, learning_rate_, optimizer_, activation_function_, epochs_)
+    anet.save(k_, 0)
+
+    # Stats for plotting and verbose
+    losses = []
+    accuracies = []
     win_stats = {1: 0, 2: 0}
     start_stats = {1: 0, 2: 0}
     verbose_text = ""
-    current_state = None
-    first_player = 0
+
     # For each episode/game, do
     start_time = time.time()
-    for i in range(1, G + 1):
-        print('**************** GAME NUMBER {} ****************'.format(i))
-        first_player = set_first_player(P)
-        start_stats[first_player] += 1
-        """ Add access to more games here """
-        if game_type == 0:
-            current_state = Node(NIM(N, K, first_player), first_player)
-        elif game_type == 1:
-            current_state = Node(Ledge(B, first_player), first_player)
-        verbose_text += "Initial state: {} \n".format(current_state.get_game_state())
-        # create new game to play
-        move_index = 0
-        player = 3 - first_player
-        while not current_state.is_terminal_node():
-            player = 3 - player
-            # Perform action based on MCTS
-            current_state = perform_action(M, current_state)
-            move_index += 1
-            if _verbose:
-                verbose_text += str(move_index) + ": "
-                """ Add verbose for more games here """
-                if game_type == 0:
-                    verbose_text += NIM.print(current_state, player)
-                else:
-                    verbose_text += Ledge.print(current_state, player)
-        verbose_text += "Player " + str(player) + " won \n\n"
-        win_stats[player] += 1
-    if _verbose:
+    for g_a in range(episodes_):
+        print(f'**************** GAME NUMBER {g_a} ****************')
+        # Live plotting
+        if live_plot:
+            plot(episode=g_a)
+        if g_a % i_s == 0:
+            anet.save(k_, level=g_a)
+            anet.epochs += 10
+            plot(episode=g_a, save=True)
+        # Initialize the actual game board (b_a) to an empty board.
+        b_a = Hex(size=k_, game_state=None, players_turn=first_player_)
+        # TODO: check if reset of board is necessary: b_a.reset()
+        # s_init ← starting board state
+        s_init = Node(b_a)
+        # Initialize the Monte Carlo Tree (MCT) to a single root, which represents s_init
+        mcts = MCTS(s_init)
+        while not b_a.is_game_over():
+            # D = distribution if visit counts in MCT along all arcs emanating from root
+            D = mcts.perform_search_games(simulations_, anet)
+            # Add case (root, D) to RBUF
+            add_case(b_a, D)
+            # Choose actual move (a*) based on D
+            action = b_a.initial_moves[np.argmax(D)]  # Distribution is corrected for possible action at current b_a
+            # Perform a* on root to produce successor state s*
+            successor_state = mcts.root_node.children[action]
+            # Update b_a to s*
+            b_a.move(action)
+            # In MCT, retain subtree rooted at s*; discard everthin else
+            # root <- s*
+            mcts.update_root(successor_state)
+        # Train ANET on a minibatch of case in RBUF
+        train_anet(anet, RBUF, minibatch_size_)
+        mcts.eps *= eps_decay
+    anet.save(size=k_, level=g_a + 1)
+    plot(episode=g_a + 1, save=True)
+    write(f'cases/size_{k_}', all_cases)
+    if verbose_:
         print(verbose_text)
         print('Run time: ' + str(time.time() - start_time))
-    if P == 3:
-        print("Player {} started {} and won {}/{}, while player {} started {} and won {}/{} games."
-              .format(1, start_stats[1], win_stats[1], G, 2, start_stats[2], win_stats[2], G))
-    else:
-        print("Player {} started and won {}/{} ({:.4} %) games"
-              .format(first_player, win_stats[first_player], G, 100 * win_stats[first_player] / G))
 
 
 if __name__ == '__main__':
-    G = 50
-    M = 600
-    # Need to be able to handle 100 > N > K > 1
-    N = 12
-    K = 3
-    # Board for Ledge, need to be able to handle 1 <= length <= 20
-    # and 0 <= number of copper coins <= L - 1
-    # B = [0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 2, 1, 0, 1]
-    B = [0, 1, 0, 2, 0, 0, 1]
-    # P = 1: Player 1 starts, P = 2: Player 2 starts, P = 3: random
-    P = 1
-    # When adding more games just increment the index for the next game
-    type_of_game = 0  # [0: NIM, 1: Ledge]
+    """ Pivotal Parameters """
+    # MCTS
+    episodes = 50  # I.e. number of games
+    simulations = 500
+
+    # Hex
+    k = 5  # Hex board size, must handle 3 <= k <= 10
+    first_player = 1  # p = 1: Player 1 starts, p = 2: Player 2 starts, p = 3: random
+
+    # ANET
+    learning_rate = 0.005
+    hidden_layers = [120, 84]  # Length is the number of layers, entry is the width of level i
+    optimizer = 'Adam'  # Is currently implemented to handle Adagrad, Adam, RMSProp and Adagrad
+    activation_function = 'relu'  # Could be linear, sigmoid, tanh, relu, etc..
+    epochs = 0
+
+    # TOPP
+    m = 4
+    rr_games = 25
+    minibatch_size = 6
+
     verbose = True
-    run(G, M, N, K, B, P, type_of_game, verbose)
+    run(episodes, simulations, k, first_player, learning_rate, hidden_layers, activation_function, optimizer, epochs,
+        m, rr_games, minibatch_size, verbose)
