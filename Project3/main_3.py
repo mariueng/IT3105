@@ -171,15 +171,11 @@ if __name__ == '__main__':
 
     # ANET (Actor Network)
     cnn = True  # Whether to use CNN instead of ANN or not
-    # TODO: try learning_rate = 0.001 and epochs = 5
     learning_rate = 0.001
     hidden_layers = [32, 32]  # Length is the number of layers, entry is the width of level i
-    optimizer = 'Adam'  # Is currently implemented to handle Adagrad, Adam, RMSProp and Adagrad
-    activation_function = 'ReLU'  # Is currently implemented to handle linear, sigmoid, tanh, and relu
+    optimizer = 'Adam'  # Is currently implemented to handle Adagrad, Adam, RMSProp and SGD
+    activation_function = 'ReLU'  # Is currently implemented to handle Linear, Sigmoid, Tanh, and ReLU
     epochs = 5  # Initial number of epochs to train anet on. NB! Must be greater than 0
-
-    # TOPP
-    rr_games = 25
 
     # Miscellaneous
     verbose = True

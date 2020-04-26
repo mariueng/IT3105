@@ -1,5 +1,6 @@
 from state_manager import Hex
-from ANET import ANET
+from CNN import CNN
+
 import random
 import numpy as np
 
@@ -17,16 +18,18 @@ class TOPP:
         print('----------- Tournament -----------')
         print(f'Size of board: {self.board_size}')
         print(f'Total number of players: {len(self.list_of_one_players)}')
+        print(f'Games between each players: {self.nr_games}')
         for g in range(self.nr_games):
             for p1 in self.list_of_one_players:
                 for p2 in self.list_of_two_players:
                     if p1 != p2:
-                        print(f'{p1} - {p2} \n')
+                        # print('-----------    Game    -----------')
+                        # print(f'{p1} - {p2} \n')
                         player_one_won, moves = self.play_topp_game(self.list_of_two_players[p1],
                                                                     self.list_of_one_players[p2], display)
                         winner = p1 if player_one_won else p2
                         self.table[winner] += 1
-                        print(f'{winner} won after {moves}')
+                        # print(f'Agent level {winner} won after {moves}')
         print('All games finished!')
         print('The final results are:')
         table_sorted = {player: result for player, result in sorted(self.table.items(),
@@ -34,17 +37,18 @@ class TOPP:
                                                                     reverse=True)}
         index = 1
         for player in list(table_sorted.keys()):
-            print(f'{index:>2}: {player:>3} - {self.table[player]:>2} wins')
+            print(f'{index:>2}: Agent level {player:>3} - {self.table[player]:>2} wins')
             index += 1
 
     def play_topp_game(self, player_one, player_two, display=True):
         self.hex.reset()
         moves = 0
         while not self.hex.is_game_over():
+            moves += 1
             if self.hex.players_turn == 1:
-                _, stochastic_index, greedy_index = player_one.get_distribution(self.hex, self.hex.get_actions())
+                _, stochastic_index, greedy_index = player_one.get_distribution(self.hex)
             else:
-                _, stochastic_index, greedy_index = player_two.get_distribution(self.hex, self.hex.get_actions())
+                _, stochastic_index, greedy_index = player_two.get_distribution(self.hex)
             self.hex.move(self.hex.initial_moves[stochastic_index if random.random() > 0.5 else greedy_index])
         player_one_won = True if self.hex.game_result() == 1 else False
         if display:
@@ -54,18 +58,21 @@ class TOPP:
 
 
 if __name__ == '__main__':
-    board_size = 6
+    # Hex
+    k = 5
 
+    # Neural network(s)
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.005  # learning rate
-    H_dims = [32, 32]  # [math.floor(2 * (1 + board_size ** 2) / 3) + board_size ** 2] * 3
-    io_dim = board_size * board_size  # input and output layer sizes
+    learning_rate = 0.001  # learning rate
+    hidden_layers = [32, 32]  # [math.floor(2 * (1 + board_size ** 2) / 3) + board_size ** 2] * 3
+    io_dim = k * k  # input and output layer sizes
     activation = activation_functions[3]
     optimizer = optimizers[3]
-    epochs = 10
+    epochs = 5
 
-    num_games = 100
+    # Tournament settings
+    rr_games = 50
     bottom_level = 0
     top_level = 200
     interval = 50
@@ -76,11 +83,12 @@ if __name__ == '__main__':
     players2 = {}
 
     for i in range(0, len(models), 2):
-        ann = ANET(io_dim, H_dims, alpha, optimizer, activation, epochs)
-        ann.load(board_size, models[i])
-        players1[models[i]] = ann
-        ann = ANET(io_dim, H_dims, alpha, optimizer, activation, epochs)
-        ann.load(board_size, models[i + 1])
-        players2[models[i + 1]] = ann
-    tournament = TOPP(players1, players2, board_size, num_games)
-    tournament.run_tournament(display=False)
+        anet = CNN(io_dim, hidden_layers, learning_rate, optimizer, activation, epochs)
+        anet.load(k, models[i])
+        players1[models[i]] = anet
+        anet = CNN(io_dim, hidden_layers, learning_rate, optimizer, activation, epochs)
+        anet.load(k, models[i + 1])
+        players2[models[i + 1]] = anet
+    topp = TOPP(players1, players2, k, rr_games)
+    # Set display=True to print every game
+    topp.run_tournament(display=False)

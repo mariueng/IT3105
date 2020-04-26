@@ -255,7 +255,7 @@ class Hex(Game):
         if path:
             nx.draw(graph, pos=positions, nodelist=self.get_minimal_path(path), node_color='blue',
                     node_size=1300 - 200 * self.size, ax=fig.axes[0])
-            fig.axes[0].set_title("Player {} won".format(3 - self.players_turn))
+            fig.axes[0].set_title(f'Player {3 - self.players_turn} won')
         labels = {}
         i = 0
         for cell in self.game_state:
