@@ -1,6 +1,6 @@
 from state_manager import Hex
 from node import Node
-from mcts import MCTS
+from mcts import MCTS, is_terminal
 from ANET import ANET
 from CNN import CNN
 
@@ -9,42 +9,6 @@ import numpy as np
 import random
 import math
 import matplotlib.pyplot as plt
-
-
-# Dictionary with checked terminal states. Format: {board_state : value, ...},
-# where board_state is a string representation of the game and value is one of
-# 0, 1, or 2 depending on the state
-checked_states = dict()
-
-
-def check_if_visited(state):
-    """
-    Helper method to check whether state has been checked for terminality before.
-    :param state: State to check
-    :return: 0, 1 or 2 if state is visited before, otherwise None
-    """
-    string_state = ''.join(state.repr_state)
-    visited = checked_states.get(string_state)
-    if visited is not None:
-        # Visited, exists in hashmap
-        # Return value of state: 0, 1 or 2
-        return visited
-    # Unvisited states, does not exist in hashmap
-    terminal = state.is_game_over()
-    if not terminal:
-        # Not terminal state, store in hashmap
-        checked_states[string_state] = 0
-        return 0
-    # Terminal state, return 1 or 2
-    result = 3 - state.players_turn
-    # Store in hashmap
-    checked_states[string_state] = result
-    return result
-
-
-def is_terminal(state):
-    check = check_if_visited(state)
-    return check > 0
 
 
 def write(filename, cases):
@@ -105,7 +69,6 @@ class Program:
             episode_start_time = time.time()
             # TODO: remove print
             print(f'Episode: {g_a + 1:>3}')
-            # TODO: change this line
             if g_a % display == 0 and self.plt_start:
                 self.plot(level=g_a, save=True)
             if g_a % self.i_s == 0:
@@ -200,7 +163,7 @@ class Program:
 if __name__ == '__main__':
     """ Pivotal Parameters """
     # Hex
-    k = 6  # Hex board size, must handle 3 <= k <= 10
+    k = 5  # Hex board size, must handle 3 <= k <= 10
 
     # MCTS
     episodes = 200  # I.e. number of games
@@ -208,11 +171,12 @@ if __name__ == '__main__':
 
     # ANET (Actor Network)
     cnn = True  # Whether to use CNN instead of ANN or not
-    learning_rate = 0.005
+    # TODO: try learning_rate = 0.001 and epochs = 5
+    learning_rate = 0.001
     hidden_layers = [32, 32]  # Length is the number of layers, entry is the width of level i
     optimizer = 'Adam'  # Is currently implemented to handle Adagrad, Adam, RMSProp and Adagrad
     activation_function = 'ReLU'  # Is currently implemented to handle linear, sigmoid, tanh, and relu
-    epochs = 10  # Initial number of epochs to train anet on
+    epochs = 5  # Initial number of epochs to train anet on. NB! Must be greater than 0
 
     # TOPP
     rr_games = 25
@@ -242,5 +206,5 @@ if __name__ == '__main__':
                 test_data=None)
 
     # Run program
-    p.run(display=True)
+    p.run(display=10)
 

@@ -54,12 +54,12 @@ class TOPP:
 
 
 if __name__ == '__main__':
-    board_size = 5
+    board_size = 6
 
-    activation_functions = ["linear", "sigmoid", "tanh", "relu"]
+    activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
     optimizers = ["Adagrad", "SGD", "RMSprop", "Adam"]
-    alpha = 0.001  # learning rate
-    H_dims = [128, 128, 64, 64]  # [math.floor(2 * (1 + board_size ** 2) / 3) + board_size ** 2] * 3
+    alpha = 0.005  # learning rate
+    H_dims = [32, 32]  # [math.floor(2 * (1 + board_size ** 2) / 3) + board_size ** 2] * 3
     io_dim = board_size * board_size  # input and output layer sizes
     activation = activation_functions[3]
     optimizer = optimizers[3]

@@ -1,7 +1,42 @@
 from node import Node
-from main_3 import is_terminal
 import random
 import numpy as np
+
+
+# Dictionary with checked terminal states. Format: {board_state : value, ...},
+# where board_state is a string representation of the game and value is one of
+# 0, 1, or 2 depending on the state
+checked_states = dict()
+
+
+def check_if_visited(state):
+    """
+    Helper method to check whether state has been checked for terminality before.
+    :param state: State to check
+    :return: 0, 1 or 2 if state is visited before, otherwise None
+    """
+    string_state = ''.join(str(e) for e in state.repr_state)
+    visited = checked_states.get(string_state)
+    if visited is not None:
+        # Visited, exists in hashmap
+        # Return value of state: 0, 1 or 2
+        return visited
+    # Unvisited states, does not exist in hashmap
+    terminal = state.is_game_over()
+    if not terminal:
+        # Not terminal state, store in hashmap
+        checked_states[string_state] = 0
+        return 0
+    # Terminal state, return 1 or 2
+    result = 3 - state.players_turn
+    # Store in hashmap
+    checked_states[string_state] = result
+    return result
+
+
+def is_terminal(state):
+    check = check_if_visited(state)
+    return check > 0
 
 
 class MCTS:
