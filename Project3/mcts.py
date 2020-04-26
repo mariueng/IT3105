@@ -1,4 +1,5 @@
 from node import Node
+from main_3 import is_terminal
 import random
 import numpy as np
 
@@ -18,7 +19,7 @@ class MCTS:
         for g_s in range(no_simulations):
             # Use tree policy P_t to search from root to a leaf (L) of MCT. Update b_mc with each move
             leaf_node = self.tree_policy(self.root_node)
-            if leaf_node.is_terminal_node():
+            if is_terminal(leaf_node.state):
                 # Perform MCTS backpropagation from F to root.
                 self.backpropagate(leaf_node, leaf_node.state.game_result())
                 continue
@@ -50,7 +51,7 @@ class MCTS:
 
     def rollout(self, leaf_node):
         current_state = leaf_node.state.get_copy()
-        while not current_state.is_game_over():
+        while not is_terminal(current_state):
             action = self.rollout_policy(current_state)
             current_state.move(action)
         return current_state.game_result()

@@ -14,8 +14,8 @@ class TOPP:
         self.nr_games = nr_games
 
     def run_tournament(self, display):
-        print('Tournament:')
-        print(f'Board-size: {self.board_size}')
+        print('----------- Tournament -----------')
+        print(f'Size of board: {self.board_size}')
         print(f'Total number of players: {len(self.list_of_one_players)}')
         for g in range(self.nr_games):
             for p1 in self.list_of_one_players:
@@ -41,8 +41,10 @@ class TOPP:
         self.hex.reset()
         moves = 0
         while not self.hex.is_game_over():
-            _, stochastic_index, greedy_index = player_one.get_distribution(self.hex, self.hex.get_actions()) \
-                if self.hex.players_turn == 1 else player_two.get_distribution(self.hex, self.hex.get_actions())
+            if self.hex.players_turn == 1:
+                _, stochastic_index, greedy_index = player_one.get_distribution(self.hex, self.hex.get_actions())
+            else:
+                _, stochastic_index, greedy_index = player_two.get_distribution(self.hex, self.hex.get_actions())
             self.hex.move(self.hex.initial_moves[stochastic_index if random.random() > 0.5 else greedy_index])
         player_one_won = True if self.hex.game_result() == 1 else False
         if display:

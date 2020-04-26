@@ -11,16 +11,63 @@ import math
 import matplotlib.pyplot as plt
 
 
+# Dictionary with checked terminal states. Format: {board_state : value, ...},
+# where board_state is a string representation of the game and value is one of
+# 0, 1, or 2 depending on the state
+checked_states = dict()
+
+
+def check_if_visited(state):
+    """
+    Helper method to check whether state has been checked for terminality before.
+    :param state: State to check
+    :return: 0, 1 or 2 if state is visited before, otherwise None
+    """
+    string_state = ''.join(state.repr_state)
+    visited = checked_states.get(string_state)
+    if visited is not None:
+        # Visited, exists in hashmap
+        # Return value of state: 0, 1 or 2
+        return visited
+    # Unvisited states, does not exist in hashmap
+    terminal = state.is_game_over()
+    if not terminal:
+        # Not terminal state, store in hashmap
+        checked_states[string_state] = 0
+        return 0
+    # Terminal state, return 1 or 2
+    result = 3 - state.players_turn
+    # Store in hashmap
+    checked_states[string_state] = result
+    return result
+
+
+def is_terminal(state):
+    check = check_if_visited(state)
+    return check > 0
+
+
 def write(filename, cases):
+    """
+    Writes Replay Buffer (RBUF) to cases
+    :param filename: Name of the file to be written
+    :param cases: cases to write
+    :return:
+    """
     inputs, targets = list(zip(*cases))
     input_txt = filename + '_inputs.txt'
     target_txt = filename + '_targets.txt'
     np.savetxt(input_txt, inputs)
     np.savetxt(target_txt, targets)
-    print(f'Buffer have been written to \n{input_txt}\n{target_txt}')
+    print(f'RBUF have been written to \n{input_txt}\n{target_txt}')
 
 
 def load(filename):
+    """
+    Loads existing Replay Buffer (RBUF)
+    :param filename: name of file to load
+    :return: cases
+    """
     inputs = np.loadtxt(filename + '_inputs.txt')
     targets = np.loadtxt(filename + '_targets.txt')
     cases = list(zip(inputs, targets))
@@ -47,12 +94,18 @@ class Program:
         self.plt_start = 0
 
     def run(self, display):
+        """
+        Runs Deep Reinforcement Algorithm with MCTS
+        :param display: True if displaying the statistics of trained neural net at the end
+        :return:
+        """
         eps_decay = 0.05 ** (1. / self.episodes) if self.episodes > 100 else 1
         total_start_time = time.time()
         for g_a in range(episodes):
             episode_start_time = time.time()
             # TODO: remove print
             print(f'Episode: {g_a + 1:>3}')
+            # TODO: change this line
             if g_a % display == 0 and self.plt_start:
                 self.plot(level=g_a, save=True)
             if g_a % self.i_s == 0:
@@ -60,7 +113,7 @@ class Program:
             self.b_a.reset()
             s_init = Node(self.b_a)
             self.mcts.update_root(s_init)
-            while not self.b_a.is_game_over():
+            while not is_terminal(self.b_a):
                 D = self.mcts.perform_search_games(simulations)
                 self.add_case(D)
                 action = self.b_a.initial_moves[np.argmax(D)]
@@ -90,6 +143,11 @@ class Program:
         self.train_accuracies.append(train_acc)
 
     def add_case(self, D):
+        """
+        Adds a training case to the RBUF
+        :param D: distribution
+        :return:
+        """
         state = self.b_a.repr_state
         self.RBUF.append((state, D))
         if random.random() > 0.5:
@@ -97,6 +155,12 @@ class Program:
 
     @staticmethod
     def rotated(state, D):
+        """
+        Rotates a training case 180 degrees to create a new training case
+        :param state: state of training case
+        :param D: distribution of training case
+        :return: rotated array representing new case
+        """
         player = state[0]
         return np.asarray([player] + list(state[:0:-1])), D[::-1]
 
@@ -152,7 +216,6 @@ if __name__ == '__main__':
 
     # TOPP
     rr_games = 25
-    minibatch_size = 6
 
     # Miscellaneous
     verbose = True
