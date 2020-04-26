@@ -48,6 +48,7 @@ class Hex(Game):
     '''
     ends = defaultdict(list)
     initial_moves = []
+    bridge_neighbours = defaultdict(list)
 
     def __init__(self, size, game_state=None, players_turn=1):
         super().__init__(game_state, players_turn)
@@ -63,6 +64,7 @@ class Hex(Game):
             self.game_state = game_state if game_state else self.generate_game_state()
         if len(self.neighbours) == 0:
             self.__generate_neighbours()
+            self.__generate_bridge_neigbours()
         self.players_turn = players_turn
 
     def generate_game_state(self):
@@ -101,7 +103,7 @@ class Hex(Game):
                         self.neighbours[(row, col)] = [(row - 1, col), (row, col - 1), (row + 1, col - 1), (row + 1, col)]
                     else:
                         self.neighbours[(row, col)] = [(row - 1, col), (row - 1, col + 1), (row, col - 1), (row, col + 1), (row + 1, col - 1), (row + 1, col)]
-
+        # TODO: check this code!
         # Add left side for player 1
         self.ends[1].append([(row, 0) for row in range(size)])
         # Add right side for player 1
@@ -110,11 +112,30 @@ class Hex(Game):
         self.ends[2].append([(0, col) for col in range(size)])
         # Add left side for player 2
         self.ends[2].append([(size - 1, col) for col in range(size)])
-
-    def get_pid_state(self):
-        state = tuple(self.game_state.values())
-        return (self.players_turn, state)
-
+    
+    def __generate_bridge_neigbours(self):
+        """
+        Generates a 2-step neighbour matrix to find bridge endpoint neighbours
+        :return:
+        """
+        matrix = np.zeros(self.size ** 4).reshape(self.size ** 2, self.size ** 2)
+        for i in range(self.size ** 2):
+            for j in range(self.size ** 2):
+                if i != j:
+                    from_cell = (i // self.size, i % self.size)
+                    to_cell = (j // self.size, j % self.size)
+                    if to_cell in self.neighbours[from_cell]:
+                        matrix[i][j] = 1
+        two_step_matrix = np.matmul(matrix, matrix)
+        np.fill_diagonal(two_step_matrix, 0)
+        for i in range(self.size ** 2):
+            for j in range(self.size ** 2):
+                if i != j:
+                    from_cell = (i // self.size, i % self.size)
+                    to_cell = (j // self.size, j % self.size)
+                    if two_step_matrix[i][j] == 2 and to_cell not in self.neighbours[from_cell]:
+                        self.bridge_neighbours[from_cell].append(to_cell)
+                    
     @property
     def repr_state(self):
         # TODO: why not a string instead of list? both hashable tho
@@ -131,7 +152,6 @@ class Hex(Game):
         """
         Player self.turn performs the action moving the board to the next state
         :param action: (row, col)
-        :return: Next Hex board state
         """
         assert self.game_state[(action[0], action[1])] == 0, "Invalid move, cell not empty"
         self.game_state[(action[0], action[1])] = self.players_turn
@@ -250,7 +270,7 @@ class Hex(Game):
             plt.show(block=True)
 
     def reset(self):
-        self.players_turn = 1  # assuming player 1 always starts
+        self.players_turn = 1
         for cell in self.game_state:
             self.game_state[cell] = 0
 
@@ -260,17 +280,3 @@ class Hex(Game):
 
     def __repr__(self):
         return f'{self.repr_state}'
-
-
-if __name__ == '__main__':
-    game = Hex(5)
-    reds = [(0, 2), (1, 1), (1, 2), (2, 1), (3, 1)]
-    blacks = [(0, 1), (1, 4), (4, 4), (3, 2), (3, 3)]
-    for cell in reds:
-        game.game_state[cell] = 1
-    for cell in blacks:
-        game.game_state[cell] = 2
-    game.draw()
-    game.player = 2
-    path = game.is_game_over()
-    game.draw(path)

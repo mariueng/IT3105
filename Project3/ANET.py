@@ -4,24 +4,24 @@ import numpy as np
 
 
 class ANET(nn.Module):
-    def __init__(self, io_dim, H_dims, learning_rate, optimizer, activation_fn, epochs):
+    def __init__(self, io_dim, hidden_layers, learning_rate, optimizer, activation, epochs):
         super(ANET, self).__init__()
         self.alpha = learning_rate
         self.epochs = epochs
-        activation_fn = self.__choose_activation_fn(activation_fn)
-        layers = self.gen_layers(io_dim, H_dims, activation_fn)
+        activation = self.__choose_activation_function(activation)
+        layers = self.gen_layers(io_dim, hidden_layers, activation)
         self.model = torch.nn.Sequential(*layers)
         self.loss_fn = torch.nn.BCELoss(reduction="mean")
         self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
 
-    def gen_layers(self, io_dim, H_dims, activation_fn):
-        layers = [torch.nn.Linear(io_dim + 1, H_dims[0]), torch.nn.Dropout(0.5)]
+    def gen_layers(self, io_dim, hidden_layers, activation_fn):
+        layers = [torch.nn.Linear(io_dim + 1, hidden_layers[0]), torch.nn.Dropout(0.5)]
         layers.append(activation_fn) if activation_fn is not None else None
-        for i in range(len(H_dims)-1):
-            layers.append(torch.nn.Linear(H_dims[i], H_dims[i+1]))
+        for i in range(len(hidden_layers) - 1):
+            layers.append(torch.nn.Linear(hidden_layers[i], hidden_layers[i + 1]))
             layers.append(torch.nn.Dropout(0.5))
             layers.append(activation_fn) if activation_fn is not None else None
-        layers.append(torch.nn.Linear(H_dims[-1], io_dim))
+        layers.append(torch.nn.Linear(hidden_layers[-1], io_dim))
         layers.append(torch.nn.Softmax(dim=-1))
         return layers
 
@@ -45,7 +45,8 @@ class ANET(nn.Module):
         with torch.no_grad():
             return self.model(x)
 
-    def get_distribution(self, state, legal_moves):
+    def get_distribution(self, state):
+        legal_moves = state.get_legal_actions()
         factor = [1 if move in legal_moves else 0 for move in state.initial_moves]
         input = self.transform(state.repr_state)
         probs = self.forward(input).data.numpy()
@@ -73,7 +74,7 @@ class ANET(nn.Module):
 
     def save(self, size, level):
         torch.save(self.state_dict(), f"models/{size}_ANET_level_{level}")
-        print(f"\nModel has been saved to models/{size}_ANET_level_{level}")
+        print(f"Model has been saved to models/{size}_ANET_level_{level}")
 
     def load(self, size, level):
         self.load_state_dict(torch.load(f"models/{size}_ANET_level_{level}"))
@@ -88,7 +89,7 @@ class ANET(nn.Module):
         }[optimizer]
 
     @staticmethod
-    def __choose_activation_fn(activation_fn):
+    def __choose_activation_function(activation_fn):
         return {
             "relu": torch.nn.ReLU(),
             "tanh": torch.nn.Tanh(),

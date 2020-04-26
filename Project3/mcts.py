@@ -4,18 +4,18 @@ import numpy as np
 
 
 class MCTS:
-    def __init__(self, root_node, eps=1):
-        self.root_node = root_node
+    def __init__(self, anet=None, eps=1, c=1.4, stochastic=True):
+        self.root_node = None
+        self.anet = anet
         self.eps = eps
+        self.c = c
+        self.stochastic = stochastic
 
     def update_root(self, new_root):
         self.root_node = new_root
 
-    def perform_search_games(self, no_simulations, anet):
+    def perform_search_games(self, no_simulations):
         for g_s in range(no_simulations):
-            # Initialize Monte Carlo game board (b_mc) to same state as root
-            # NB! Has to be a copy!
-            # b_mc = Node(self.root_node.state.get_copy())
             # Use tree policy P_t to search from root to a leaf (L) of MCT. Update b_mc with each move
             leaf_node = self.tree_policy(self.root_node)
             if leaf_node.is_terminal_node():
@@ -23,7 +23,7 @@ class MCTS:
                 self.backpropagate(leaf_node, leaf_node.state.game_result())
                 continue
             # Use ANET to choose rollout actions from L to a final state (F). Update b_mc with each move.
-            result = self.rollout(leaf_node, anet)
+            result = self.rollout(leaf_node)
             # Perform MCTS backpropagation from F to root.
             self.backpropagate(leaf_node, result)
         distribution = self.retrieve_distribution(self.root_node)  # Should be created from b_a state
@@ -37,10 +37,9 @@ class MCTS:
         self.expand(b_mc)
         return self.get_best_child_based_on_uct(b_mc)
 
-    @staticmethod
-    def get_best_child_based_on_uct(node, c=1.4):
+    def get_best_child_based_on_uct(self, node):
         actions = list(node.actions.keys())
-        action_values = [node.get_action_values(a, c) for a in actions]
+        action_values = [node.get_action_values(a, self.c) for a in actions]
         return node.children[actions[np.argmax(action_values) if node.players_turn == 1 else np.argmin(action_values)]]
 
     def expand(self, node):
@@ -49,19 +48,19 @@ class MCTS:
             child_state.move(action)
             node.children[action] = Node(child_state, node, action)
 
-    def rollout(self, leaf_node, anet):
+    def rollout(self, leaf_node):
         current_state = leaf_node.state.get_copy()
         while not current_state.is_game_over():
-            action = self.rollout_policy(current_state, anet, eps=self.eps)
+            action = self.rollout_policy(current_state)
             current_state.move(action)
         return current_state.game_result()
 
-    def rollout_policy(self, state, anet, eps=1, stochastic=True):
+    def rollout_policy(self, state, stochastic=True):
         action_space = state.get_actions()
-        if random.random() < eps:
+        if random.random() < self.eps:
             return random.choice(action_space)
         else:
-            _, stochastic_index, greedy_index = anet.get_distribution(state, action_space, state.initial_moves)
+            _, stochastic_index, greedy_index = self.anet.get_distribution(state)
             if stochastic:
                 return state.initial_moves[stochastic_index]
             else:
