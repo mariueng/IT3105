@@ -15,7 +15,8 @@ class ANET(nn.Module):
         self.optimizer = self.__choose_optimizer(list(self.model.parameters()), optimizer)
 
     def gen_layers(self, io_dim, hidden_layers, activation_fn):
-        layers = [torch.nn.Linear(io_dim + 1, hidden_layers[0]), torch.nn.Dropout(0.5)]
+        layers = [torch.nn.Linear(io_dim + 1, hidden_layers[0])]
+        layers.append(torch.nn.Dropout(0.5))
         layers.append(activation_fn) if activation_fn is not None else None
         for i in range(len(hidden_layers) - 1):
             layers.append(torch.nn.Linear(hidden_layers[i], hidden_layers[i + 1]))
@@ -48,24 +49,24 @@ class ANET(nn.Module):
     def get_distribution(self, state):
         legal_moves = state.get_legal_actions()
         factor = [1 if move in legal_moves else 0 for move in state.initial_moves]
-        input = self.transform(state.repr_state)
-        probs = self.forward(input).data.numpy()
-        sum = 0
-        new_probs = np.zeros(state.size ** 2)
+        input_ = self.transform(state.repr_state)
+        probabilities = self.forward(input_).data.numpy()
+        sum_ = 0
+        new_probabilities = np.zeros(state.size ** 2)
         for i in range(state.size ** 2):
             if factor[i]:
-                sum += probs[i]
-                new_probs[i] = probs[i]
+                sum_ += probabilities[i]
+                new_probabilities[i] = probabilities[i]
             else:
-                new_probs[i] = 0
-        new_probs /= sum
+                new_probabilities[i] = 0
+        new_probabilities /= sum_
         indices = np.arange(state.size ** 2)
-        stochastic_index = np.random.choice(indices, p=new_probs)
-        greedy_index = np.argmax(new_probs)
-        return new_probs, stochastic_index, greedy_index
+        stochastic_index = np.random.choice(indices, p=new_probabilities)
+        greedy_index = np.argmax(new_probabilities)
+        return new_probabilities, stochastic_index, greedy_index
 
-    def get_status(self, input, target):
-        x = self.transform(input)
+    def get_status(self, input_, target):
+        x = self.transform(input_)
         y = self.transform(target)
         pred_y = self.forward(x)
         loss = self.loss_fn(pred_y, y)
@@ -91,8 +92,9 @@ class ANET(nn.Module):
     @staticmethod
     def __choose_activation_function(activation_fn):
         return {
-            "relu": torch.nn.ReLU(),
-            "tanh": torch.nn.Tanh(),
-            "sigmoid": torch.nn.Sigmoid(),
-            "linear": None
+            "ReLU": nn.ReLU(),
+            "Tanh": nn.Tanh(),
+            "Sigmoid": nn.Sigmoid(),
+            "Linear": nn.Identity(),
+            "LeakyReLU": nn.LeakyReLU()
         }[activation_fn]

@@ -31,7 +31,34 @@ class TOPP:
                         self.table[winner] += 1
                         # print(f'Agent level {winner} won after {moves}')
         print('All games finished!')
-        print('The final results are:')
+        print('The final standings are:')
+        table_sorted = {player: result for player, result in sorted(self.table.items(),
+                                                                    key=lambda score: score[1],
+                                                                    reverse=True)}
+        index = 1
+        for player in list(table_sorted.keys()):
+            print(f'{index:>2}: Agent level {player:>3} - {self.table[player]:>2} wins')
+            index += 1
+
+    def run_random_games(self, display):
+        print('----------- Matches vs Random Player -----------')
+        print(f'Size of board: {self.board_size}')
+        print(f'Total number of anet players: {len(self.list_of_one_players)}')
+        print(f'Games between each anet and random player: {self.nr_games}')
+        random_player = 'RP'
+        rp_wins = 0
+        for game in range(rr_games):
+            for agent in self.list_of_one_players:
+                player_one_won, moves = self.play_random_game(self.list_of_one_players[agent], random_player, display)
+                winner = agent if player_one_won else random_player
+                if winner == 'RP':
+                    rp_wins += 1
+                else:
+                    self.table[winner] += 1
+
+        print('All games finished!')
+        print('The final standings are:')
+        print(f'Random player won {rp_wins} games')
         table_sorted = {player: result for player, result in sorted(self.table.items(),
                                                                     key=lambda score: score[1],
                                                                     reverse=True)}
@@ -55,6 +82,22 @@ class TOPP:
             path = self.hex.is_game_over()
             self.hex.draw(path=path, animation_delay=0.2)
         return player_one_won, moves
+
+    def play_random_game(self, anet_player, random_player, display=True):
+        self.hex.reset()
+        moves = 0
+        while not self.hex.is_game_over():
+            moves += 1
+            if self.hex.players_turn == 1:
+                _, stochastic_index, greedy_index = anet_player.get_distribution(self.hex)
+                self.hex.move(self.hex.initial_moves[stochastic_index if random.random() > 0.5 else greedy_index])
+            else:
+                self.hex.move(random.choice(self.hex.get_actions()))
+        anet_player_won = True if self.hex.game_result() == 1 else False
+        if display:
+            path = self.hex.is_game_over()
+            self.hex.draw(path=path, animation_delay=0.2)
+        return anet_player_won, moves
 
 
 if __name__ == '__main__':
@@ -92,3 +135,5 @@ if __name__ == '__main__':
     topp = TOPP(players1, players2, k, rr_games)
     # Set display=True to print every game
     topp.run_tournament(display=False)
+    # Method to run ANETs against random player
+    # topp.run_random_games(display=False)

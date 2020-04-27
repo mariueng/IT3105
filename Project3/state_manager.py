@@ -103,15 +103,14 @@ class Hex(Game):
                         self.neighbours[(row, col)] = [(row - 1, col), (row, col - 1), (row + 1, col - 1), (row + 1, col)]
                     else:
                         self.neighbours[(row, col)] = [(row - 1, col), (row - 1, col + 1), (row, col - 1), (row, col + 1), (row + 1, col - 1), (row + 1, col)]
-        # TODO: check this code!
         # Add left side for player 1
-        self.ends[1].append([(row, 0) for row in range(size)])
+        self.ends[1].append([(0, col) for col in range(size)])
         # Add right side for player 1
-        self.ends[1].append([(row, size - 1) for row in range(size)])
+        self.ends[1].append([(size - 1, col) for col in range(size)])
         # Add right side for player 2
-        self.ends[2].append([(0, col) for col in range(size)])
+        self.ends[2].append([(row, 0) for row in range(size)])
         # Add left side for player 2
-        self.ends[2].append([(size - 1, col) for col in range(size)])
+        self.ends[2].append([(row, size - 1) for row in range(size)])
     
     def __generate_bridge_neigbours(self):
         """

@@ -1,9 +1,8 @@
-import math
-from ANET import ANET
 from CNN import CNN
 from state_manager import Hex
 import numpy as np
 from BasicClientActorAbs import BasicClientActorAbs
+
 
 class BasicClientActor(BasicClientActorAbs):
 
@@ -21,7 +20,7 @@ class BasicClientActor(BasicClientActorAbs):
         self.cnn = CNN(self.board_size ** 2, hidden_layers, learning_rate, optimizer, activation, epochs)
         # self.anet = ANET(self.board_size ** 2, hidden_layers, learning_rate, optimizer, activation, epochs)
         # Specify level to load here
-        self.cnn.load(self.board_size, 50)
+        self.cnn.load(self.board_size, 250)
 
     def handle_get_action(self, state):
         """
@@ -34,7 +33,6 @@ class BasicClientActor(BasicClientActorAbs):
         :return: Your actor's selected action as a tuple (row, column)
         """
 
-        # This is an example player who picks random moves. REMOVE THIS WHEN YOU ADD YOUR OWN CODE !!
         player = state[0]
         board = state[1:]
         size = int(np.sqrt(len(board)))
@@ -42,7 +40,7 @@ class BasicClientActor(BasicClientActorAbs):
         probabilities, stochastic_index, greedy_index = self.cnn.get_distribution(game)
         next_move = game.initial_moves[greedy_index]
         print(f'Model chose move {next_move}')
-        game.draw(animation_delay=0.1)
+        # game.draw(animation_delay=0.1)
         return next_move
 
     def handle_series_start(self, unique_id, series_id, player_map, num_games, game_params):

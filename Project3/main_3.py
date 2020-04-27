@@ -163,11 +163,11 @@ class Program:
 if __name__ == '__main__':
     """ Pivotal Parameters """
     # Hex
-    k = 5  # Hex board size, must handle 3 <= k <= 10
+    k = 6  # Hex board size, must handle 3 <= k <= 10
 
     # MCTS
-    episodes = 200  # I.e. number of games
-    simulations = 500
+    episodes = 500  # I.e. number of games
+    simulations = 1000
 
     # ANET (Actor Network)
     cnn = True  # Whether to use CNN instead of ANN or not
@@ -179,7 +179,7 @@ if __name__ == '__main__':
 
     # Miscellaneous
     verbose = True
-    m = 4  # Number of ANETs to save during run
+    m = 10  # Number of ANETs to save during run
 
     # Instantiate necessary objects
     initial_board = Hex(k)

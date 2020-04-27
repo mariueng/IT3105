@@ -224,4 +224,5 @@ class CNN(nn.Module):
             "Tanh": nn.Tanh(),
             "Sigmoid": nn.Sigmoid(),
             "Linear": nn.Identity(),
+            "LeakyReLU": nn.LeakyReLU()
         }[activation_fn]
