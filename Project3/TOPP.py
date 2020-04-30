@@ -11,10 +11,15 @@ class TOPP:
         self.list_of_two_players = list_of_two_players
         self.board_size = board_size
         self.hex = Hex(board_size)
-        self.table = {player: 0 for player in self.list_of_one_players}
+        self.standings = {player: 0 for player in self.list_of_one_players}
         self.nr_games = nr_games
 
     def run_tournament(self, display):
+        """
+        Runs Tournament of Progressive Policies (TOPP)
+        :param display: If True, every game result is visualized
+        :return:
+        """
         print('----------- Tournament -----------')
         print(f'Size of board: {self.board_size}')
         print(f'Total number of players: {len(self.list_of_one_players)}')
@@ -28,19 +33,24 @@ class TOPP:
                         player_one_won, moves = self.play_topp_game(self.list_of_two_players[p1],
                                                                     self.list_of_one_players[p2], display)
                         winner = p1 if player_one_won else p2
-                        self.table[winner] += 1
+                        self.standings[winner] += 1
                         # print(f'Agent level {winner} won after {moves}')
         print('All games finished!')
         print('The final standings are:')
-        table_sorted = {player: result for player, result in sorted(self.table.items(),
+        table_sorted = {player: result for player, result in sorted(self.standings.items(),
                                                                     key=lambda score: score[1],
                                                                     reverse=True)}
         index = 1
         for player in list(table_sorted.keys()):
-            print(f'{index:>2}: Agent level {player:>3} - {self.table[player]:>2} wins')
+            print(f'{index:>2}: Agent level {player:>3} - {self.standings[player]:>2} wins')
             index += 1
 
     def run_random_games(self, display):
+        """
+        Runs the provided agents against a random player
+        :param display: If True, every game result is visualized
+        :return:
+        """
         print('----------- Matches vs Random Player -----------')
         print(f'Size of board: {self.board_size}')
         print(f'Total number of anet players: {len(self.list_of_one_players)}')
@@ -54,20 +64,27 @@ class TOPP:
                 if winner == 'RP':
                     rp_wins += 1
                 else:
-                    self.table[winner] += 1
+                    self.standings[winner] += 1
 
         print('All games finished!')
         print('The final standings are:')
         print(f'Random player won {rp_wins} games')
-        table_sorted = {player: result for player, result in sorted(self.table.items(),
+        table_sorted = {player: result for player, result in sorted(self.standings.items(),
                                                                     key=lambda score: score[1],
                                                                     reverse=True)}
         index = 1
         for player in list(table_sorted.keys()):
-            print(f'{index:>2}: Agent level {player:>3} - {self.table[player]:>2} wins')
+            print(f'{index:>2}: Agent level {player:>3} - {self.standings[player]:>2} wins')
             index += 1
 
     def play_topp_game(self, player_one, player_two, display=True):
+        """
+        Method to play TOPP game
+        :param player_one: Player 1
+        :param player_two: Player 2
+        :param display: If True, every game result is visualized
+        :return:
+        """
         self.hex.reset()
         moves = 0
         while not self.hex.is_game_over():
@@ -84,6 +101,13 @@ class TOPP:
         return player_one_won, moves
 
     def play_random_game(self, anet_player, random_player, display=True):
+        """
+        Plays a game between agent and random player
+        :param anet_player: Agent player
+        :param random_player: Random player
+        :param display: If True, every game result is visualized
+        :return:
+        """
         self.hex.reset()
         moves = 0
         while not self.hex.is_game_over():
@@ -102,7 +126,7 @@ class TOPP:
 
 if __name__ == '__main__':
     # Hex
-    k = 5
+    k = 5  # Board size
 
     # Neural network(s)
     activation_functions = ["Linear", "Sigmoid", "Tanh", "ReLU"]
@@ -116,11 +140,11 @@ if __name__ == '__main__':
 
     # Tournament settings
     rr_games = 50
-    bottom_level = 0
-    top_level = 200
-    interval = 50
+    lowest_level_agent = 0
+    highest_level_agent = 200
+    interval_between_agents = 50
 
-    l = np.arange(bottom_level, top_level + 1, interval)
+    l = np.arange(lowest_level_agent, highest_level_agent + 1, interval_between_agents)
     models = np.sort(np.concatenate([l, l]))
     players1 = {}
     players2 = {}

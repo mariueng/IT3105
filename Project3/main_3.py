@@ -34,12 +34,13 @@ def load(filename):
     """
     inputs = np.loadtxt(filename + '_inputs.txt')
     targets = np.loadtxt(filename + '_targets.txt')
-    cases = list(zip(inputs, targets))
-    return cases
+    return inputs.astype(int), targets
 
 
 class Program:
-    def __init__(self, episodes, simulations, initial_board, anet, mcts, number_of_saves, RBUF=None, test_data=None):
+    def __init__(self, episodes, simulations, initial_board, anet, mcts, number_of_saves, RBUF=None, test_data=None,
+                 verbose=False):
+        # Program properties
         self.episodes = episodes
         self.simulations = simulations
         self.b_a = initial_board
@@ -56,19 +57,20 @@ class Program:
         # Replay Buffer
         self.RBUF = RBUF if RBUF else []
         self.plt_start = 0
+        self.verbose = verbose
 
     def run(self, display):
         """
         Runs Deep Reinforcement Algorithm with MCTS
-        :param display: True if displaying the statistics of trained neural net at the end
+        :param display: If true, every game is printed
         :return:
         """
         eps_decay = 0.05 ** (1. / self.episodes) if self.episodes > 100 else 1
         total_start_time = time.time()
         for g_a in range(episodes):
             episode_start_time = time.time()
-            # TODO: remove print
-            print(f'Episode: {g_a + 1:>3}')
+            if verbose:
+                print(f'Episode: {g_a + 1:>3}')
             if g_a % display == 0 and self.plt_start:
                 self.plot(level=g_a, save=True)
             if g_a % self.i_s == 0:
@@ -84,8 +86,10 @@ class Program:
                 self.mcts.update_root(self.mcts.root_node.children[action])
             self.train_anet(g_a)
             self.mcts.eps *= eps_decay
-            print(f'Episode runtime: {str(time.time() - episode_start_time)}')
-        print(f'Total runtime: {str(time.time() - total_start_time)}')
+            if verbose:
+                print(f'Episode runtime: {str(time.time() - episode_start_time)}')
+        if verbose:
+            print(f'Total runtime: {str(time.time() - total_start_time)}')
         self.anet.save(size=self.b_a.size, level=g_a + 1)
         self.plot(level=g_a + 1, save=True)
         write(f'cases/size_{self.b_a.size}', self.RBUF)
@@ -127,6 +131,7 @@ class Program:
         player = state[0]
         return np.asarray([player] + list(state[:0:-1])), D[::-1]
 
+    # TODO: Remove wip plot function (Hex has own method to draw board)
     def plot(self, level, save=False):
         x = np.arange(len(self.train_accuracies)) + self.plt_start
         fig = plt.figure(figsize=(12, 5))
@@ -163,7 +168,7 @@ class Program:
 if __name__ == '__main__':
     """ Pivotal Parameters """
     # Hex
-    k = 6  # Hex board size, must handle 3 <= k <= 10
+    k = 5  # Hex board size, must handle 3 <= k <= 10
 
     # MCTS
     episodes = 500  # I.e. number of games
@@ -178,7 +183,7 @@ if __name__ == '__main__':
     epochs = 5  # Initial number of epochs to train anet on. NB! Must be greater than 0
 
     # Miscellaneous
-    verbose = True
+    verbose = True  # Set to True to print statuses during run
     m = 10  # Number of ANETs to save during run
 
     # Instantiate necessary objects
@@ -199,7 +204,8 @@ if __name__ == '__main__':
                 mcts=mcts,
                 number_of_saves=m,
                 RBUF=None,
-                test_data=None)
+                test_data=None,
+                verbose=verbose)
 
     # Run program
     p.run(display=10)

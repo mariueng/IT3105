@@ -15,12 +15,12 @@ class BasicClientActor(BasicClientActorAbs):
         hidden_layers = [32, 32]
         activation = activation_functions[3]
         optimizer = optimizers[3]
-        epochs = 1
+        epochs = 5
         self.board_size = 6
         self.cnn = CNN(self.board_size ** 2, hidden_layers, learning_rate, optimizer, activation, epochs)
         # self.anet = ANET(self.board_size ** 2, hidden_layers, learning_rate, optimizer, activation, epochs)
         # Specify level to load here
-        self.cnn.load(self.board_size, 250)
+        self.cnn.load(self.board_size, 150)
 
     def handle_get_action(self, state):
         """
