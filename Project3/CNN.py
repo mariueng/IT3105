@@ -26,8 +26,8 @@ class CNN(nn.Module):
         self.io_dim = io_dim
         self.learning_rate = learning_rate
         self.epochs = epochs
-        h_layers = self.build_model(hidden_layers, activation)
-        self.model = nn.Sequential(h_layers)
+        hidden_layers_ = self.build_model(hidden_layers, activation)
+        self.model = nn.Sequential(hidden_layers_)
         params = list(self.parameters())
         self.optimizer = self.__choose_optimizer(params, optimizer)
         self.loss_fn = nn.CrossEntropyLoss()
@@ -115,6 +115,7 @@ class CNN(nn.Module):
 
     def transform_input(self, input_):
         """
+        (Inspired by Chao Gao, Ryan Hayward and Martin Muller 2017)
         Transforms flat game state into 9 input planes (size, size):
         - Empty/p1/p2       0/1/2   (empty/red/black)
         - To play           3/4     (p1/p2 to play)
@@ -128,10 +129,10 @@ class CNN(nn.Module):
         size = int(np.sqrt(self.io_dim))
         out = []
         for x in input_:
-            player = int(x[0])
+            pid = int(x[0])
             x = x[1:].reshape(size, size)
             planes = np.zeros(9 * size ** 2).reshape(9, size, size)
-            planes[player + 2] += 1  # plane 3/4
+            planes[pid + 2] += 1  # plane 3/4
             for row in range(size):
                 for col in range(size):
                     piece = int(x[row][col])
@@ -139,7 +140,7 @@ class CNN(nn.Module):
                     if (row, col) in self.game.bridge_neighbours:
                         for (row_bridge, col_bridge) in self.game.bridge_neighbours[(row, col)]:
                             if piece == 0:
-                                if x[row_bridge][col_bridge] == player:
+                                if x[row_bridge][col_bridge] == pid:
                                     planes[7][row][col] = 1  # 7: form bridge
                             else:
                                 if x[row_bridge][col_bridge] == piece:
@@ -148,9 +149,9 @@ class CNN(nn.Module):
                                         set(self.game.neighbours[(row_bridge, col_bridge)])))  # common neighbors
                                     r1, c1 = cn[0]
                                     r2, c2 = cn[1]
-                                    if x[r1][c1] == 0 and x[r2][c2] == 3 - player:
+                                    if x[r1][c1] == 0 and x[r2][c2] == 3 - pid:
                                         planes[8][r1][c1] = 1
-                                    elif x[r2][c2] == 0 and x[r1][c1] == 3 - player:
+                                    elif x[r2][c2] == 0 and x[r1][c1] == 3 - pid:
                                         planes[8][r2][c2] = 1
             out.append(planes)
         return torch.FloatTensor(out)
@@ -161,22 +162,22 @@ class CNN(nn.Module):
         :param state: Current game state
         :return: probability distribution, stochastic index, greedy index
         """
-        legal_moves = state.get_actions()
-        factor = [1 if move in legal_moves else 0 for move in state.initial_moves]
+        valid_moves = state.get_actions()
+        valid_move_index = [1 if move in valid_moves else 0 for move in state.initial_moves]
         probabilities = self.forward([state.repr_state]).data.numpy()[0]
         sum = 0
-        new_probs = np.zeros(state.size ** 2)
+        new_probabilities = np.zeros(state.size ** 2)
         for i in range(state.size ** 2):
-            if factor[i]:
+            if valid_move_index[i]:
                 sum += probabilities[i]
-                new_probs[i] = probabilities[i]
+                new_probabilities[i] = probabilities[i]
             else:
-                new_probs[i] = 0
-        new_probs /= sum
+                new_probabilities[i] = 0
+        new_probabilities /= sum
         indices = np.arange(state.size ** 2)
-        stochastic_index = np.random.choice(indices, p=new_probs)
-        greedy_index = np.argmax(new_probs)
-        return new_probs, stochastic_index, greedy_index
+        stochastic_index = np.random.choice(indices, p=new_probabilities)
+        greedy_index = np.argmax(new_probabilities)
+        return new_probabilities, stochastic_index, greedy_index
 
     def save(self, size, level):
         """
